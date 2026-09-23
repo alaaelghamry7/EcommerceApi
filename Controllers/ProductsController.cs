@@ -17,27 +17,66 @@ public class ProductsController : ControllerBase
         _context = context;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts()
-    {
-        // EF Core translates this .Include() into an SQL LEFT JOIN
-        var products = await _context.Products
-            .Include(p => p.Category)
-            .Select(p => new ProductDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Price = p.Price,
-                StockQuantity = p.StockQuantity,
-                CreatedAt = p.CreatedAt,
-                CategoryId = p.CategoryId,
-                CategoryName = p.Category != null ? p.Category.Name : string.Empty
-            })
-            .ToListAsync();
+// GET: api/products?search=phone&categoryId=1&minPrice=100&sortBy=price&sortOrder=desc&pageNumber=1&pageSize=10
+[HttpGet]
+public async Task<ActionResult<PagedResponse<ProductDto>>> GetProducts([FromQuery] ProductQueryParameters queryParams)
+{
+    // 1. Build initial IQueryable (Deferred Execution)
+    IQueryable<Product> query = _context.Products.Include(p => p.Category);
 
-        return Ok(products);
+    // 2. Apply Searching & Filtering
+    if (!string.IsNullOrWhiteSpace(queryParams.Search))
+    {
+        query = query.Where(p => p.Name.Contains(queryParams.Search));
     }
 
+    if (queryParams.CategoryId.HasValue)
+    {
+        query = query.Where(p => p.CategoryId == queryParams.CategoryId.Value);
+    }
+
+    if (queryParams.MinPrice.HasValue)
+    {
+        query = query.Where(p => p.Price >= queryParams.MinPrice.Value);
+    }
+
+    if (queryParams.MaxPrice.HasValue)
+    {
+        query = query.Where(p => p.Price <= queryParams.MaxPrice.Value);
+    }
+
+    // 3. Apply Sorting
+    bool isDescending = queryParams.SortOrder?.ToLower() == "desc";
+
+    query = queryParams.SortBy?.ToLower() switch
+    {
+        "price" => isDescending ? query.OrderByDescending(p => p.Price) : query.OrderBy(p => p.Price),
+        "name" => isDescending ? query.OrderByDescending(p => p.Name) : query.OrderBy(p => p.Name),
+        _ => isDescending ? query.OrderByDescending(p => p.CreatedAt) : query.OrderBy(p => p.CreatedAt)
+    };
+
+    // 4. Count total matching items in SQL Server BEFORE pagination
+    var totalCount = await query.CountAsync();
+
+    // 5. Apply Pagination (Skip and Take) and Execute Query
+    var items = await query
+        .Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
+        .Take(queryParams.PageSize)
+        .Select(p => new ProductDto
+        {
+            Id = p.Id,
+            Name = p.Name,
+            Price = p.Price,
+            StockQuantity = p.StockQuantity,
+            CreatedAt = p.CreatedAt,
+            CategoryId = p.CategoryId,
+            CategoryName = p.Category != null ? p.Category.Name : string.Empty
+        })
+        .ToListAsync();
+
+    // 6. Return response with items and pagination metadata
+    return Ok(new PagedResponse<ProductDto>(items, totalCount, queryParams.PageNumber, queryParams.PageSize));
+}
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductDto>> GetProduct(int id)
     {

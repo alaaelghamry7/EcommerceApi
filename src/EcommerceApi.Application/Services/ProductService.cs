@@ -1,7 +1,7 @@
 using EcommerceApi.Application.DTOs;
 using EcommerceApi.Application.Interfaces.Repositories;
 using EcommerceApi.Application.Interfaces.Services;
-using EcommerceApi.Domain.Entities;
+using EcommerceApi.Application.Mappings;
 
 namespace EcommerceApi.Application.Services;
 
@@ -20,7 +20,7 @@ public class ProductService : IProductService
     {
         var (items, totalCount) = await _productRepository.GetPagedAsync(queryParams);
 
-        var productDtos = items.Select(MapToDto).ToList();
+        var productDtos = items.ToDto();
 
         return new PagedResponse<ProductDto>(productDtos, totalCount, queryParams.PageNumber, queryParams.PageSize);
     }
@@ -28,7 +28,7 @@ public class ProductService : IProductService
     public async Task<ProductDto?> GetProductByIdAsync(int id)
     {
         var product = await _productRepository.GetByIdWithCategoryAsync(id);
-        return product == null ? null : MapToDto(product);
+        return product?.ToDto();
     }
 
     public async Task<(ProductDto? Product, string? Error)> CreateProductAsync(CreateProductDto createDto)
@@ -39,20 +39,13 @@ public class ProductService : IProductService
             return (null, $"Category with ID {createDto.CategoryId} does not exist.");
         }
 
-        var product = new Product
-        {
-            Name = createDto.Name,
-            Price = createDto.Price,
-            StockQuantity = createDto.StockQuantity,
-            CategoryId = createDto.CategoryId,
-            CreatedAt = DateTime.UtcNow
-        };
+        var product = createDto.ToEntity();
 
         await _productRepository.AddAsync(product);
         await _productRepository.SaveChangesAsync();
 
         var savedProduct = await _productRepository.GetByIdWithCategoryAsync(product.Id);
-        return (MapToDto(savedProduct!), null);
+        return (savedProduct!.ToDto(), null);
     }
 
     public async Task<(bool Success, bool NotFound, string? Error)> UpdateProductAsync(int id, UpdateProductDto updateDto)
@@ -66,10 +59,7 @@ public class ProductService : IProductService
             return (false, false, $"Category with ID {updateDto.CategoryId} does not exist.");
         }
 
-        product.Name = updateDto.Name;
-        product.Price = updateDto.Price;
-        product.StockQuantity = updateDto.StockQuantity;
-        product.CategoryId = updateDto.CategoryId;
+        product.ApplyUpdate(updateDto);
 
         await _productRepository.SaveChangesAsync();
         return (true, false, null);
@@ -84,15 +74,4 @@ public class ProductService : IProductService
         await _productRepository.SaveChangesAsync();
         return true;
     }
-
-    private static ProductDto MapToDto(Product product) => new()
-    {
-        Id = product.Id,
-        Name = product.Name,
-        Price = product.Price,
-        StockQuantity = product.StockQuantity,
-        CreatedAt = product.CreatedAt,
-        CategoryId = product.CategoryId,
-        CategoryName = product.Category != null ? product.Category.Name : string.Empty
-    };
 }

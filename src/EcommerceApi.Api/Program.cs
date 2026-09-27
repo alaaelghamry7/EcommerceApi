@@ -1,3 +1,4 @@
+using EcommerceApi.Api.Middleware;
 using EcommerceApi.Application;
 using EcommerceApi.Infrastructure;
 
@@ -22,6 +23,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(); // Serves the interactive Swagger web page
 }
+
+app.UseGlobalExceptionHandling();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

@@ -1,4 +1,4 @@
-namespace EcommerceApi.Models;
+namespace EcommerceApi.Domain.Entities;
 
 public class Category
 {

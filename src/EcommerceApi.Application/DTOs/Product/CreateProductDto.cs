@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace EcommerceApi.DTOs;
+namespace EcommerceApi.Application.DTOs;
 
 public class CreateProductDto
 {

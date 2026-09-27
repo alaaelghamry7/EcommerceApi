@@ -1,14 +1,14 @@
-using Microsoft.EntityFrameworkCore;
-using EcommerceApi.Data;
+using EcommerceApi.Application;
+using EcommerceApi.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Add Controllers
 builder.Services.AddControllers();
 
-// Register the EF Core DbContext
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Register Application services and Infrastructure (EF Core DbContext, repositories)
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // 2. Register Swagger Services
 builder.Services.AddEndpointsApiExplorer();

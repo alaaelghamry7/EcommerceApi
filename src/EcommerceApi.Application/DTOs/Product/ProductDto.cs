@@ -1,4 +1,4 @@
-namespace EcommerceApi.DTOs;
+namespace EcommerceApi.Application.DTOs;
 
 public class ProductDto
 {

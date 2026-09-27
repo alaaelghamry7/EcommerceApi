@@ -1,56 +1,31 @@
-using EcommerceApi.Data;
-using EcommerceApi.DTOs;
-using EcommerceApi.Models;
+using EcommerceApi.Application.DTOs;
+using EcommerceApi.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
-namespace EcommerceApi.Controllers;
+namespace EcommerceApi.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class CategoriesController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
+    private readonly ICategoryService _categoryService;
 
-    public CategoriesController(ApplicationDbContext context)
+    public CategoriesController(ICategoryService categoryService)
     {
-        _context = context;
+        _categoryService = categoryService;
     }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
     {
-        var categories = await _context.Categories
-            .Select(c => new CategoryDto
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Description = c.Description
-            })
-            .ToListAsync();
-
+        var categories = await _categoryService.GetCategoriesAsync();
         return Ok(categories);
     }
 
     [HttpPost]
     public async Task<ActionResult<CategoryDto>> CreateCategory(CreateCategoryDto createDto)
     {
-        var category = new Category
-        {
-            Name = createDto.Name,
-            Description = createDto.Description
-        };
-
-        _context.Categories.Add(category);
-        await _context.SaveChangesAsync();
-
-        var categoryDto = new CategoryDto
-        {
-            Id = category.Id,
-            Name = category.Name,
-            Description = category.Description
-        };
-
-        return CreatedAtAction(nameof(GetCategories), new { id = category.Id }, categoryDto);
+        var categoryDto = await _categoryService.CreateCategoryAsync(createDto);
+        return CreatedAtAction(nameof(GetCategories), new { id = categoryDto.Id }, categoryDto);
     }
 }

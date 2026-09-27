@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace EcommerceApi.Migrations
+namespace EcommerceApi.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class AddCategoryRelationship : Migration

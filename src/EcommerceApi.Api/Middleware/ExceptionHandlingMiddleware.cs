@@ -7,6 +7,11 @@ namespace EcommerceApi.Api.Middleware;
 
 public class ExceptionHandlingMiddleware
 {
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    };
+
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
     private readonly IHostEnvironment _environment;
@@ -42,7 +47,7 @@ public class ExceptionHandlingMiddleware
         context.Response.ContentType = "application/problem+json";
         context.Response.StatusCode = problemDetails.Status ?? (int)HttpStatusCode.InternalServerError;
 
-        await context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails));
+        await context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails, SerializerOptions));
     }
 
     private ProblemDetails MapException(Exception exception)
@@ -54,8 +59,7 @@ public class ExceptionHandlingMiddleware
                 {
                     Title = "Resource not found",
                     Status = (int)HttpStatusCode.NotFound,
-                    Detail = notFoundException.Message,
-                    Type = "https://tools.ietf.org/html/rfc9110#section-15.5.5"
+                    Detail = notFoundException.Message
                 };
 
             case ValidationException validationException:
@@ -63,8 +67,7 @@ public class ExceptionHandlingMiddleware
                 {
                     Title = "Validation failed",
                     Status = (int)HttpStatusCode.BadRequest,
-                    Detail = validationException.Message,
-                    Type = "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                    Detail = validationException.Message
                 };
 
             case UnauthorizedAccessException unauthorizedException:
@@ -72,8 +75,7 @@ public class ExceptionHandlingMiddleware
                 {
                     Title = "Unauthorized",
                     Status = (int)HttpStatusCode.Unauthorized,
-                    Detail = unauthorizedException.Message,
-                    Type = "https://tools.ietf.org/html/rfc9110#section-15.5.2"
+                    Detail = unauthorizedException.Message
                 };
 
             default:
@@ -81,8 +83,7 @@ public class ExceptionHandlingMiddleware
                 {
                     Title = "An unexpected error occurred",
                     Status = (int)HttpStatusCode.InternalServerError,
-                    Detail = _environment.IsDevelopment() ? exception.ToString() : "An internal server error occurred. Please try again later.",
-                    Type = "https://tools.ietf.org/html/rfc9110#section-15.6.1"
+                    Detail = _environment.IsDevelopment() ? exception.ToString() : "An internal server error occurred. Please try again later."
                 };
         }
     }

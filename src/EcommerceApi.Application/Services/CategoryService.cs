@@ -1,7 +1,7 @@
 using EcommerceApi.Application.DTOs;
 using EcommerceApi.Application.Interfaces.Repositories;
 using EcommerceApi.Application.Interfaces.Services;
-using EcommerceApi.Domain.Entities;
+using EcommerceApi.Application.Mappings;
 
 namespace EcommerceApi.Application.Services;
 
@@ -17,27 +17,16 @@ public class CategoryService : ICategoryService
     public async Task<List<CategoryDto>> GetCategoriesAsync()
     {
         var categories = await _categoryRepository.GetAllAsync();
-        return categories.Select(MapToDto).ToList();
+        return categories.ToDto();
     }
 
     public async Task<CategoryDto> CreateCategoryAsync(CreateCategoryDto createDto)
     {
-        var category = new Category
-        {
-            Name = createDto.Name,
-            Description = createDto.Description
-        };
+        var category = createDto.ToEntity();
 
         await _categoryRepository.AddAsync(category);
         await _categoryRepository.SaveChangesAsync();
 
-        return MapToDto(category);
+        return category.ToDto();
     }
-
-    private static CategoryDto MapToDto(Category category) => new()
-    {
-        Id = category.Id,
-        Name = category.Name,
-        Description = category.Description
-    };
 }

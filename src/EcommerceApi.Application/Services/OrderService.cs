@@ -1,6 +1,7 @@
 using EcommerceApi.Application.DTOs;
 using EcommerceApi.Application.Interfaces.Repositories;
 using EcommerceApi.Application.Interfaces.Services;
+using EcommerceApi.Application.Mappings;
 using EcommerceApi.Domain.Entities;
 
 namespace EcommerceApi.Application.Services;
@@ -58,19 +59,7 @@ public class OrderService : IOrderService
         await _orderRepository.SaveChangesAsync();
 
         // 5. Build the Response DTO
-        var responseDto = new OrderDto
-        {
-            Id = order.Id,
-            OrderDate = order.OrderDate,
-            TotalAmount = order.TotalAmount,
-            Items = order.OrderItems.Select(oi => new OrderItemDto
-            {
-                ProductId = oi.ProductId,
-                ProductName = productNames[oi.ProductId],
-                Quantity = oi.Quantity,
-                UnitPrice = oi.UnitPrice
-            }).ToList()
-        };
+        var responseDto = order.ToDto(productNames);
 
         return (responseDto, null);
     }

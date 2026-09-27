@@ -9,6 +9,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -33,6 +35,29 @@ public class ApplicationDbContext : DbContext
                   .OnDelete(DeleteBehavior.Restrict);
         });
 
+// Configure Order constraints
+    modelBuilder.Entity<Order>(entity =>
+    {
+        entity.Property(o => o.TotalAmount).HasPrecision(18, 2);
+    });
+
+    // Configure OrderItem constraints & relationships
+    modelBuilder.Entity<OrderItem>(entity =>
+    {
+        entity.Property(oi => oi.UnitPrice).HasPrecision(18, 2);
+
+        // 1-to-Many: Order -> OrderItems
+        entity.HasOne(oi => oi.Order)
+              .WithMany(o => o.OrderItems)
+              .HasForeignKey(oi => oi.OrderId)
+              .OnDelete(DeleteBehavior.Cascade); // If order is deleted, delete its items
+
+        // 1-to-Many: Product -> OrderItems
+        entity.HasOne(oi => oi.Product)
+              .WithMany(p => p.OrderItems)
+              .HasForeignKey(oi => oi.ProductId)
+              .OnDelete(DeleteBehavior.Restrict); // Don't allow deleting a product if it's in an order
+    });
         // ==========================================
         // DATA SEEDING (Adding Test Data)
         // ==========================================

@@ -13,4 +13,5 @@ public class Product
 
     // Navigation property: A product belongs to one category
     public Category? Category { get; set; }
+    public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 }

@@ -11,6 +11,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<ShippingAddress> ShippingAddresses => Set<ShippingAddress>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
